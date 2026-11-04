@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Waterjet Production Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/print.css" media="print">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-mark">WJ</div><div><strong>WATERJET</strong><small>PRODUCTION MANAGER</small></div></div>
+    <nav>
+      <button class="nav active" data-view="dashboard">▦ <span>Dashboard</span></button>
+      <button class="nav" data-view="schedule">▦ <span>Weekly Schedule</span></button>
+      <button class="nav" data-view="jobs">▤ <span>Jobs & History</span></button>
+      <button class="nav" data-view="reports">▥ <span>Production Reports</span></button>
+      <button class="nav" data-view="settings">⚙ <span>Settings & Data</span></button>
+    </nav>
+    <div class="sidebar-foot"><span class="live-dot"></span> Shared production workspace</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div><div class="eyebrow">PRODUCTION CONTROL</div><h1 id="page-title">Dashboard</h1></div>
+      <div class="top-actions"><span id="sync-state" class="sync-state">Connecting…</span><button class="btn primary" id="new-job-top">＋ New Job</button></div>
+    </header>
+
+    <section id="view-dashboard" class="view active">
+      <div class="welcome-row"><div><h2>This week's production</h2><p id="week-label" class="muted">Loading schedule…</p></div><button class="btn" id="dashboard-week">Open schedule →</button></div>
+      <div class="stat-grid">
+        <article class="stat-card"><span>Scheduled jobs</span><strong id="dash-scheduled">0</strong><small>Current week</small></article>
+        <article class="stat-card"><span>Jobs completed</span><strong id="dash-completed">0</strong><small>Current week</small></article>
+        <article class="stat-card"><span>Estimated cutting time</span><strong id="dash-hours">0.0 h</strong><small>Scheduled workload</small></article>
+        <article class="stat-card"><span>Estimated garnet</span><strong id="dash-garnet">0 lb</strong><small>Scheduled workload</small></article>
+      </div>
+      <div class="content-grid">
+        <article class="panel"><div class="panel-head"><div><h3>Upcoming jobs</h3><p class="muted">Next scheduled work</p></div><button class="text-btn" data-goto="schedule">View schedule</button></div><div id="upcoming-list" class="job-list"></div></article>
+        <article class="panel"><div class="panel-head"><div><h3>Production activity</h3><p class="muted">Actual cutting time by day</p></div></div><canvas id="dashboard-chart" height="220"></canvas></article>
+      </div>
+      <div class="notice"><strong>Planning reminder</strong><span>Eight hours is the standard planned capacity, not a hard limit. Schedule work between 5:00 AM and 5:00 PM; long jobs are not split automatically, so schedule each day's remaining work and restart time manually.</span></div>
+    </section>
+
+    <section id="view-schedule" class="view">
+      <div class="toolbar"><div><h2>Weekly schedule</h2><p class="muted">Move jobs by dragging them. Resize to change planned duration.</p></div><div class="toolbar-actions"><button class="btn" id="print-schedule">Print schedule</button><button class="btn primary" id="new-job-schedule">＋ Add job</button></div></div>
+      <div class="panel calendar-panel"><div id="calendar"></div></div>
+      <p class="hint">Tip: Drag an unscheduled job from the job list onto the calendar, or move an existing event to another day. Schedule changes do not alter actual cutting history.</p>
+      <div class="panel"><div class="panel-head"><div><h3>Unscheduled jobs</h3><p class="muted">Drag a job onto the calendar to plan it.</p></div></div><div id="unscheduled-list" class="unscheduled-list"></div></div>
+    </section>
+
+    <section id="view-jobs" class="view">
+      <div class="toolbar"><div><h2>Jobs & cutting history</h2><p class="muted">A permanent record of planned and completed work.</p></div><div class="toolbar-actions"><button class="btn" id="import-omex-jobs">✦ Import OMEX</button><button class="btn primary" id="new-job-jobs">＋ New Job</button></div></div>
+      <div class="panel">
+        <div class="filter-row"><input id="job-search" placeholder="Search job name, number, material…"><select id="status-filter"><option value="">All statuses</option><option>Unscheduled</option><option>Scheduled</option><option>In Progress</option><option>Paused</option><option>Completed</option><option>Cancelled</option></select></div>
+        <div class="table-wrap"><table><thead><tr><th>Job</th><th>Material</th><th>Scheduled</th><th>Estimate</th><th>Actual cut</th><th>Status</th><th></th></tr></thead><tbody id="jobs-table"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="view-reports" class="view">
+      <div class="toolbar"><div><h2>Production reports</h2><p class="muted">Reports use completed cutting sessions within the selected date range.</p></div><div class="toolbar-actions"><button class="btn" id="export-csv">Export CSV</button><button class="btn primary" id="print-report">Print report / PDF</button></div></div>
+      <div class="panel report-filters"><label>Start date<input type="date" id="report-start"></label><label>End date<input type="date" id="report-end"></label><button class="btn primary" id="run-report">Update report</button></div>
+      <div id="report-print-area">
+        <div class="report-heading"><div class="eyebrow">WATERJET PRODUCTION</div><h2>Production Summary</h2><p id="report-range" class="muted"></p></div>
+        <div class="stat-grid">
+          <article class="stat-card"><span>Jobs with cutting activity</span><strong id="r-jobs">0</strong></article>
+          <article class="stat-card"><span>Actual cutting time</span><strong id="r-time">0.0 h</strong></article>
+          <article class="stat-card"><span>Recorded garnet estimate</span><strong id="r-garnet">0 lb</strong></article>
+          <article class="stat-card"><span>OMEX estimated cost</span><strong id="r-cost">$0</strong></article>
+        </div>
+        <div class="content-grid report-charts"><article class="panel"><h3>Actual cutting time by day</h3><canvas id="time-chart" height="220"></canvas></article><article class="panel"><h3>OMEX estimated cost by job</h3><canvas id="cost-chart" height="220"></canvas></article></div>
+        <div class="panel"><h3>Job detail</h3><div class="table-wrap"><table><thead><tr><th>Job</th><th>Cut date(s)</th><th>Actual time</th><th>OMEX est. garnet</th><th>OMEX est. cost</th></tr></thead><tbody id="report-table"></tbody></table></div></div>
+        <p class="report-foot muted">Actual cutting time is calculated from recorded timer sessions. Garnet and cost are OMEX estimates unless actual measurements are separately entered.</p>
+      </div>
+    </section>
+
+    <section id="view-settings" class="view">
+      <div class="toolbar"><div><h2>Settings & data</h2><p class="muted">Configure the shared workspace and export records.</p></div></div>
+      <div class="content-grid">
+        <article class="panel"><h3>Production settings</h3><label>Daily work capacity (hours)<input type="number" id="daily-hours" min="1" max="24" value="8"></label><label>Default workday starts<input type="time" id="work-start" value="07:00"></label><button class="btn primary" id="save-settings">Save settings</button></article>
+        <article class="panel"><h3>Database connection</h3><p class="muted">Enter your Supabase project URL and publishable (anon) key. These are saved in this browser only; every computer needs the same connection details.</p><label>Supabase project URL<input id="supabase-url" placeholder="https://your-project.supabase.co"></label><label>Supabase publishable / anon key<textarea id="supabase-key" rows="3" placeholder="Paste your public anon/publishable key"></textarea></label><button class="btn primary" id="connect-db">Connect / Save connection</button><p id="connection-help" class="hint">Until connected, this first version uses this browser's local storage. Local mode does not synchronize between computers.</p></article>
+      </div>
+      <div class="panel danger-panel"><h3>Data and backups</h3><p class="muted">Export all job and cutting-session data before making major changes. Do not use browser-local mode as your only production record.</p><button class="btn" id="backup-json">Download JSON backup</button><button class="btn" id="restore-json">Import JSON backup</button><input type="file" id="restore-file" accept="application/json" hidden></div>
+      <div class="notice warning"><strong>Important security notice</strong><span>No-login shared access means anyone who can reach the public website and database endpoint may be able to change records if public write policies are enabled. Do not store confidential company/customer data without employer approval. Use restrictive Supabase policies if you need controlled access.</span></div>
+    </section>
+  </main>
+
+  <dialog id="job-dialog" class="modal">
+    <form id="job-form" method="dialog">
+      <div class="modal-head"><div><div class="eyebrow">JOB RECORD</div><h2 id="job-dialog-title">Create job</h2></div><button type="button" class="icon-btn" id="close-job">✕</button></div>
+      <input type="hidden" id="job-id">
+      <div class="form-grid">
+        <label>Job name *<input id="job-name" required placeholder="Stainless Brackets"></label>
+        <label>Job / work order number<input id="job-number" placeholder="WJ-2026-0142"></label>
+        <label>Material<input id="material" placeholder="Stainless Steel 304"></label>
+        <label>Thickness (inches)<input id="thickness" type="number" step="0.0001"></label>
+        <label>Quantity (pieces)<input id="quantity" type="number" min="0" step="1"></label>
+        <label>Priority<select id="priority"><option>Normal</option><option>High</option><option>Urgent</option><option>Low</option></select></label>
+        <label>Estimated cutting time (hours)<input id="estimate-hours" type="number" min="0" step="0.01"></label>
+        <label>Estimated garnet (lb)<input id="estimate-garnet" type="number" min="0" step="0.01"></label>
+        <label>Estimated cost ($)<input id="estimate-cost" type="number" min="0" step="0.01"></label>
+        <label>Status<select id="job-status"><option>Unscheduled</option><option>Scheduled</option><option>In Progress</option><option>Paused</option><option>Completed</option><option>Cancelled</option></select></label>
+        <label>Scheduled start<input id="scheduled-start" type="datetime-local"></label>
+        <label>Scheduled end<input id="scheduled-end" type="datetime-local"></label>
+        <label class="full">Notes<textarea id="job-notes" rows="2"></textarea></label>
+      </div>
+      <div class="modal-actions"><button type="button" class="btn" id="cancel-job">Cancel</button><button type="submit" class="btn primary">Save job</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="detail-dialog" class="modal wide">
+    <div class="modal-head"><div><div class="eyebrow">PRODUCTION RECORD</div><h2 id="detail-title">Job details</h2></div><button class="icon-btn" id="close-detail">✕</button></div>
+    <div id="detail-content"></div>
+  </dialog>
+
+  <dialog id="import-dialog" class="modal wide">
+    <div class="modal-head"><div><div class="eyebrow">OMEX STATISTICS</div><h2>Import cutting estimate</h2></div><button type="button" class="icon-btn" id="close-import">✕</button></div>
+    <p class="muted">Paste one complete OMEX report. AI will extract the important values, then you can review and correct them before saving.</p>
+    <div class="form-grid"><label>Job name *<input id="omex-job-name" required placeholder="Stainless steel brackets"></label><label>Job / work order number<input id="omex-job-number" placeholder="WJ-2026-0142"></label></div>
+    <label>OMEX report<textarea id="omex-text" rows="12" placeholder="Paste OMEX statistics here…"></textarea></label>
+    <div class="omex-ai-actions"><button class="btn primary" id="parse-omex">✦ Analyze with AI</button><span id="omex-ai-status" class="muted" role="status">Ready for one report</span></div>
+    <div id="omex-preview" class="preview-box"><p class="muted">Your extracted information will appear here for review.</p></div>
+    <div class="modal-actions"><button class="btn" id="cancel-import">Cancel</button><button class="btn primary" id="save-import" disabled>Save statistics to job</button></div>
+  </dialog>
+
+  <dialog id="timer-dialog" class="modal">
+    <div class="modal-head"><div><div class="eyebrow">CUTTING SESSION</div><h2 id="timer-title">Job timer</h2></div><button class="icon-btn" id="close-timer">✕</button></div>
+    <div id="timer-state" class="timer-state"></div>
+    <div class="timer-actions"><button class="btn primary" id="timer-start">Start / Resume</button><button class="btn" id="timer-pause">Pause</button><button class="btn success" id="timer-complete">Complete job</button></div>
+    <div class="divider"></div>
+    <h3>Manual session entry / correction</h3>
+    <p class="muted">Use this when you forgot to start or stop the timer, or when restarting on another day.</p>
+    <div class="form-grid">
+      <label>Start date & time<input type="datetime-local" id="manual-start"></label>
+      <label>End date & time<input type="datetime-local" id="manual-end"></label>
+    </div>
+    <button class="btn" id="add-manual-session">Save manual session</button>
+    <h3>Recorded sessions</h3><div id="session-list"></div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

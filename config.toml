@@ -1,0 +1,4 @@
+[functions.parse-omex]
+# Public invocation is needed for this no-login prototype. Protect the endpoint
+# with employer-approved access controls and rate limits before production use.
+verify_jwt = false
